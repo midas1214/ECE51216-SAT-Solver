@@ -1,9 +1,9 @@
 #include "dimacs.h"
 #include <fstream>
 #include <sstream>
+#include <string>
 
 static inline int to_lit(int dimacs_lit) {
-    // dimacs_lit: positive => x, negative => ~x
     int v = (dimacs_lit > 0) ? dimacs_lit : -dimacs_lit;
     int sign = (dimacs_lit > 0) ? 0 : 1;
     return 2 * (v - 1) + sign;
@@ -11,43 +11,66 @@ static inline int to_lit(int dimacs_lit) {
 
 bool read_dimacs_cnf(const std::string& path, CNF& out_cnf) {
     std::ifstream in(path);
-    if (!in.is_open()) return false;
+    if (!in.is_open()) {
+        return false;
+    }
 
     out_cnf = CNF{};
-    std::string line;
 
+    std::string tok;
     int expected_clauses = 0;
+    bool saw_header = false;
 
-    while (std::getline(in, line)) {
-        if (line.empty()) continue;
-        if (line[0] == 'c') continue;
+    while (in >> tok) {
+        if (tok == "c") {
+            std::string rest;
+            std::getline(in, rest);
+        } else if (tok == "p") {
+            std::string fmt;
+            in >> fmt >> out_cnf.nvars >> expected_clauses;
 
-        if (line[0] == 'p') {
-            std::stringstream ss(line);
-            std::string p, fmt;
-            ss >> p >> fmt >> out_cnf.nvars >> expected_clauses;
+            if (fmt != "cnf" || out_cnf.nvars <= 0 || expected_clauses < 0) {
+                return false;
+            }
+
             out_cnf.clauses.reserve(expected_clauses);
+            saw_header = true;
+            break;
+        }
+    }
+
+    if (!saw_header) {
+        return false;
+    }
+
+    Clause clause;
+
+    while (in >> tok) {
+        if (tok == "c") {
+            std::string rest;
+            std::getline(in, rest);
             continue;
         }
 
-        // clause line(s): may contain multiple ints
-        std::stringstream ss(line);
-        int lit;
-        Clause clause;
-        while (ss >> lit) {
-            if (lit == 0) {
-                out_cnf.clauses.push_back(std::move(clause));
-                clause = Clause{};
-            } else {
-                clause.lits.push_back(to_lit(lit));
-            }
+        if (tok == "%") {
+            break;
         }
-        // If a clause is split across lines, DIMACS allows it.
-        // For simplicity, we only finalize when 0 appears; partial clause will continue
-        // only if next line continues. Handling that fully requires a token-stream parse.
-        // Most benchmarks put clause endings on the same line; if yours doesn't, switch
-        // to token-stream parsing.
+
+        int dimacs_lit;
+
+        try {
+            dimacs_lit = std::stoi(tok);
+        } catch (...) {
+            return false;
+        }
+
+        if (dimacs_lit == 0) {
+            out_cnf.clauses.push_back(std::move(clause));
+            clause = Clause{};
+        } else {
+            clause.lits.push_back(to_lit(dimacs_lit));
+        }
     }
 
-    return (out_cnf.nvars > 0);
+    return out_cnf.nvars > 0;
 }
