@@ -48,10 +48,10 @@ Our solver includes the following components:
 ├── mySAT
 ├── README.md
 └── benchmarks/
-    ├── simple_sat.cnf
-    ├── simple_unsat.cnf
+    ├── simple_unsat/
     ├── uf20-91/
-    └── uf50-218/
+    ├── uf50-218/
+    └── uuf75-325/
 ```
 
 ## File Descriptions
@@ -199,7 +199,7 @@ ASSIGNMENT:1=1 2=0 3=0 4=1 5=0 6=1 7=1 8=0 9=0 10=0 11=0 12=1 13=1 14=1 15=1 16=
 
 ### Example 3: Simple UNSAT test
 
-For the file `benchmarks/simple_unsat.cnf`:
+For the file `benchmarks/simple_unsat/simple_unsat.cnf`:
 
 ```text
 p cnf 1 2
@@ -210,10 +210,24 @@ p cnf 1 2
 Command:
 
 ```bash
-./mySAT benchmarks/simple_unsat.cnf
+./mySAT benchmarks/simple_unsat/simple_unsat.cnf
 ```
 
-Expected output:
+Example output:
+
+```text
+RESULT:UNSAT
+```
+
+### Example 4: Larger UNSAT benchmark
+
+Command:
+
+```bash
+./mySAT benchmarks/uuf75-325/uuf75-01.cnf
+```
+
+Example output:
 
 ```text
 RESULT:UNSAT
@@ -223,10 +237,10 @@ RESULT:UNSAT
 
 We tested the solver on:
 
-- Small manually created SAT cases.
 - Small manually created UNSAT cases.
 - SATLIB-style `uf20-91` satisfiable 3-SAT benchmarks.
 - SATLIB-style `uf50-218` satisfiable 3-SAT benchmarks.
+- SATLIB-style `uuf75-325` unsatisfiable 3-SAT benchmarks.
 
 The benchmark files used for testing are included in the `benchmarks/` directory.
 
